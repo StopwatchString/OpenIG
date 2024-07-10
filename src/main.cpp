@@ -1,35 +1,40 @@
 #define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp>
+#include "GLFW/glfw3.h"
 
 #include <iostream>
 
+const std::string WINDOW_NAME = "OpenIG";
+const uint32_t WIDTH = 800;
+const uint32_t HEIGHT = 600;
+
 int main() {
+    //--------------
+    // Init GLFW
+    //--------------
     glfwInit();
 
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Don't make an OpenGL context
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);   // TODO:: Implement window resizing
 
-    uint32_t extensionCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, WINDOW_NAME.c_str(), nullptr, nullptr);
 
-    std::cout << extensionCount << " extensions supported\n";
+    //--------------
+    // Init Vulkan
+    //--------------
 
-    glm::mat4 matrix;
-    glm::vec4 vec;
-    auto test = matrix * vec;
-
+    //--------------
+    // Main Loop
+    //--------------
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
     }
 
+    //--------------
+    // Cleanup
+    //--------------
     glfwDestroyWindow(window);
-
     glfwTerminate();
 
-    return 0;
+
+    return EXIT_SUCCESS;
 }
