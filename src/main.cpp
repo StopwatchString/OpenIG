@@ -1,5 +1,8 @@
+#define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
-#include "GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 
 #include "VkExtHelpers.h"
 
@@ -41,9 +44,10 @@ std::vector<const char*> getRequiredExtensions() {
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
 
     bool isComplete() {
-        return graphicsFamily.has_value();
+        return graphicsFamily.has_value() && presentFamily.has_value();
     }
 };
 
@@ -68,6 +72,7 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
             break;
         }
     }
+
 
     return indices;
 }
@@ -181,6 +186,14 @@ int main() {
         }
     }
 
+    // Surface implementation (required before physical devices)
+    VkSurfaceKHR surface;
+
+    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+        std::cout << "Failed to create window surface using GLFW!" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     // Physical device selection
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     uint32_t deviceCount = 0;
@@ -231,8 +244,6 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    VkQueue graphicsQueue;
-    vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
 
     //--------------
     // Main Loop
@@ -246,6 +257,9 @@ int main() {
     //--------------
     vkDestroyDevice(device, nullptr);
     
+    vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDestroyInstance(instance, nullptr);
+
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
     }
