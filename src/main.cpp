@@ -10,6 +10,7 @@
 #include <vector>
 #include <optional>
 #include <set>
+#include <unordered_map>
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -56,50 +57,72 @@ struct QueueFamilyIndices {
 };
 
 //---------------------------------------------------------
-// findQueueFamilies()
-//---------------------------------------------------------
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
-    QueueFamilyIndices indices;
-
-    uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-    for (uint32_t i = 0; i < queueFamilyCount; i++) {
-        if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            indices.graphicsFamily = i;
-        }
-
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-        if (presentSupport) {
-            indices.presentFamily = i;
-        }
-
-        if (indices.isComplete()) {
-            break;
-        }
-    }
-
-
-    return indices;
-}
-
-//---------------------------------------------------------
 // isDeviceSuitable()
 //---------------------------------------------------------
-bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
+bool isDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices) {
     VkPhysicalDeviceProperties deviceProperties;
-    VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-    QueueFamilyIndices indices = findQueueFamilies(device, surface);
 
     return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && indices.isComplete();
 }
+
+//---------------------------------------------------------
+// getDeviceCapabilitiesList()
+//---------------------------------------------------------
+std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> getDeviceCapabilitiesList(VkInstance& instance, VkSurfaceKHR& surface)
+{
+    std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> deviceCapabilitiesList;
+
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+    if (deviceCount == 0) {
+        std::cout << "No GPUs with Vulkan support found!" << std::endl;
+    }
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+    for (VkPhysicalDevice device : devices) {
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+        VkPhysicalDeviceFeatures deviceFeatures;
+        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+        QueueFamilyIndices indices;
+
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+        for (uint32_t i = 0; i < queueFamilyCount; i++) {
+            if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                indices.graphicsFamily = i;
+            }
+
+            VkBool32 presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+            if (presentSupport) {
+                indices.presentFamily = i;
+            }
+
+            if (indices.isComplete()) {
+                break;
+            }
+        }
+
+
+        deviceCapabilitiesList[device] = indices;
+    }
+
+    return deviceCapabilitiesList;
+}
+
 
 //---------------------------------------------------------
 // main()
@@ -206,18 +229,11 @@ int main() {
 
     // Physical device selection
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-    if (deviceCount == 0) {
-        std::cout << "No GPUs with Vulkan support found!" << std::endl;
-        return EXIT_FAILURE;
-    }
 
-    std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+    std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> physicalDeviceList = getDeviceCapabilitiesList(instance, surface);
 
-    for (VkPhysicalDevice device : devices) { // TODO:: Better device selection
-        if (isDeviceSuitable(device, surface)) {
+    for (const auto& [device, queueFamilyIndices] : physicalDeviceList) {
+        if (isDeviceSuitable(device, queueFamilyIndices)) {
             physicalDevice = device;
             break;
         }
@@ -230,7 +246,7 @@ int main() {
 
     VkQueue presentQueue;
 
-    QueueFamilyIndices queueIndices = findQueueFamilies(physicalDevice, surface);
+    QueueFamilyIndices queueIndices = physicalDeviceList[physicalDevice];
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = { queueIndices.graphicsFamily.value(), queueIndices.presentFamily.value() };
@@ -242,7 +258,7 @@ int main() {
         queueCreateInfo.queueFamilyIndex = queueFamily;
         queueCreateInfo.queueCount = 1;
         queueCreateInfo.pQueuePriorities = &queuePriority;
-        queueCreateInfos.push_back(queueCreateInfo);
+        queueCreateInfos.emplace_back(queueCreateInfo);
     }
 
     // Logical device selection
