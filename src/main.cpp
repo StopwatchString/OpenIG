@@ -69,9 +69,9 @@ bool isDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices) {
 }
 
 //---------------------------------------------------------
-// getDeviceCapabilitiesList()
+// getPhysicalDeviceCapabilitiesList()
 //---------------------------------------------------------
-std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> getDeviceCapabilitiesList(VkInstance& instance, VkSurfaceKHR& surface)
+std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> getPhysicalDeviceCapabilitiesList(VkInstance& instance, VkSurfaceKHR& surface)
 {
     std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> deviceCapabilitiesList;
 
@@ -230,7 +230,7 @@ int main() {
     // Physical device selection
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
-    std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> physicalDeviceList = getDeviceCapabilitiesList(instance, surface);
+    std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> physicalDeviceList = getPhysicalDeviceCapabilitiesList(instance, surface);
 
     for (const auto& [device, queueFamilyIndices] : physicalDeviceList) {
         if (isDeviceSuitable(device, queueFamilyIndices)) {
