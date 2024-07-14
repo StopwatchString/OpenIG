@@ -15,6 +15,19 @@ source_group(TREE "${PROJECT_SOURCE_DIR}" FILES ${INCLUDES})
 add_executable(${PROJECT_NAME} ${SOURCES} ${INCLUDES} ${GLM_INCLUDES})
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    VS_GLOBAL_RunCodeAnalysis true
+
+    # Use visual studio core guidelines
+    VS_GLOBAL_EnableMicrosoftCodeAnalysis true
+    VS_GLOBAL_CodeAnalysisRuleSet ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.ruleset
+    VS_GLOBAL_CodeAnalysisRuleSet ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.ruleset
+
+    # Use clangtidy
+    VS_GLOBAL_EnableClangTidyCodeAnalysis true
+    VS_GLOBAL_ClangTidyChecks -checks=-*,modernize-*,-modernize-use-trailing-return-type
+)
+
 target_include_directories(${PROJECT_NAME} 
         PRIVATE
          "${PROJECT_SOURCE_DIR}/include")
