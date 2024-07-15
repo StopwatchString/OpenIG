@@ -17,7 +17,8 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT $
 
 target_include_directories(${PROJECT_NAME} 
         PRIVATE
-         "${PROJECT_SOURCE_DIR}/include")
+         "${PROJECT_SOURCE_DIR}/include"
+         "${PROJECT_SOURCE_DIR}/include/imgui")
 
 add_subdirectory("extern/glm")
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
