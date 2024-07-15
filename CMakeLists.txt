@@ -15,32 +15,18 @@ source_group(TREE "${PROJECT_SOURCE_DIR}" FILES ${INCLUDES})
 add_executable(${PROJECT_NAME} ${SOURCES} ${INCLUDES} ${GLM_INCLUDES})
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    VS_GLOBAL_RunCodeAnalysis true
-
-    # Use visual studio core guidelines
-    VS_GLOBAL_EnableMicrosoftCodeAnalysis true
-    VS_GLOBAL_CodeAnalysisRuleSet ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.ruleset
-    VS_GLOBAL_CodeAnalysisRuleSet ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.ruleset
-
-    # Use clangtidy
-    VS_GLOBAL_EnableClangTidyCodeAnalysis true
-    VS_GLOBAL_ClangTidyChecks -checks=-*,modernize-*,-modernize-use-trailing-return-type
-)
-
 target_include_directories(${PROJECT_NAME} 
         PRIVATE
          "${PROJECT_SOURCE_DIR}/include")
 
 add_subdirectory("extern/glm")
-target_link_libraries(OpenIG PRIVATE glm::glm)
+target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
 
 set(GLFW_BUILD_EXAMPLES OFF)
 set(GLFW_BUILD_TESTS OFF)
 set(GLFW_BUILD_DOCS OFF)
 add_subdirectory("extern/glfw")
-target_link_libraries(OpenIG PRIVATE glfw)
-
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 
 find_package(Vulkan REQUIRED)
-target_link_libraries(OpenIG PRIVATE Vulkan::Vulkan)
+target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)

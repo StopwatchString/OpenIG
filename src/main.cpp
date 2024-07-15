@@ -11,11 +11,12 @@
 #include <optional>
 #include <set>
 #include <unordered_map>
+#include <span>
 
 #ifdef NDEBUG
-const bool enableValidationLayers = false;
+constexpr bool enableValidationLayers = false;
 #else
-const bool enableValidationLayers = true;
+constexpr bool enableValidationLayers = true;
 #endif
 
 // Validation Layers we want to enable
@@ -23,9 +24,14 @@ const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation",
 };
 
+// Required physicalDevice extensions
+const std::vector<const char*> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
 const char* APPLICATION_NAME = "OpenIG";
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+constexpr uint32_t WIDTH = 800;
+constexpr uint32_t HEIGHT = 600;
 
 //---------------------------------------------------------
 // getRequiredExtensions()
@@ -35,7 +41,9 @@ std::vector<const char*> getRequiredExtensions() {
     const char** glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    const std::span<const char*> extensionSpan(glfwExtensions, glfwExtensionCount);
+
+    std::vector<const char*> extensions(extensionSpan.begin(), extensionSpan.end());
 
     if (enableValidationLayers) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -51,7 +59,7 @@ struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
 
-    bool isComplete() {
+    bool const isComplete() noexcept {
         return graphicsFamily.has_value() && presentFamily.has_value();
     }
 };
@@ -69,44 +77,44 @@ bool isDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices) {
 }
 
 //---------------------------------------------------------
-// getPhysicalDeviceCapabilitiesList()
+// mapPhysicalDevicesToQueueFamilies()
 //---------------------------------------------------------
-std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> getPhysicalDeviceCapabilitiesList(VkInstance& instance, VkSurfaceKHR& surface)
+std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> mapPhysicalDevicesToQueueFamilies(VkInstance& instance, VkSurfaceKHR& surface)
 {
-    std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> deviceCapabilitiesList;
+    std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> physicalDevicesToQueueFamilies;
 
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-    if (deviceCount == 0) {
+    uint32_t physicalDeviceCount = 0;
+    vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, nullptr);
+    if (physicalDeviceCount == 0) {
         std::cout << "No GPUs with Vulkan support found!" << std::endl;
     }
 
-    std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+    std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
+    vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, physicalDevices.data());
 
-    for (VkPhysicalDevice device : devices) {
+    for (VkPhysicalDevice physicalDevice : physicalDevices) {
         VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+        vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 
         VkPhysicalDeviceFeatures deviceFeatures;
-        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+        vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 
         QueueFamilyIndices indices;
 
         uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
         for (uint32_t i = 0; i < queueFamilyCount; i++) {
+            // 
             if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 indices.graphicsFamily = i;
             }
 
             VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+            vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
             if (presentSupport) {
                 indices.presentFamily = i;
             }
@@ -117,10 +125,10 @@ std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> getPhysicalDeviceCapabi
         }
 
 
-        deviceCapabilitiesList[device] = indices;
+        physicalDevicesToQueueFamilies[physicalDevice] = indices;
     }
 
-    return deviceCapabilitiesList;
+    return physicalDevicesToQueueFamilies;
 }
 
 
@@ -219,7 +227,7 @@ int main() {
         }
     }
 
-    // Surface implementation (required before physical devices)
+    // Surface implementation (required before physical physicalDevices)
     VkSurfaceKHR surface;
 
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
@@ -227,10 +235,10 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    // Physical device selection
+    // Physical physicalDevice selection
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
-    std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> physicalDeviceList = getPhysicalDeviceCapabilitiesList(instance, surface);
+    std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> physicalDeviceList = mapPhysicalDevicesToQueueFamilies(instance, surface);
 
     for (const auto& [device, queueFamilyIndices] : physicalDeviceList) {
         if (isDeviceSuitable(device, queueFamilyIndices)) {
@@ -244,8 +252,7 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    VkQueue presentQueue;
-
+    // deviceCreateInfo structs creations for logical physicalDevice selection
     QueueFamilyIndices queueIndices = physicalDeviceList[physicalDevice];
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -261,7 +268,7 @@ int main() {
         queueCreateInfos.emplace_back(queueCreateInfo);
     }
 
-    // Logical device selection
+    // Logical physicalDevice selection
     VkDevice device;
 
     VkPhysicalDeviceFeatures deviceFeatures{};
@@ -278,6 +285,7 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    VkQueue presentQueue;
     vkGetDeviceQueue(device, queueIndices.presentFamily.value(), 0, &presentQueue);
 
     //--------------
