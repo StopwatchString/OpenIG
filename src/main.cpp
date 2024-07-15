@@ -74,7 +74,9 @@ bool isDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices) {
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && indices.isComplete();
+    //deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+
+    return indices.isComplete();
 }
 
 //---------------------------------------------------------

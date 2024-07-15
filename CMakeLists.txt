@@ -29,5 +29,8 @@ set(GLFW_BUILD_DOCS OFF)
 add_subdirectory("extern/glfw")
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 
+find_package(OpenGL REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenGL::GL)
+
 find_package(Vulkan REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
