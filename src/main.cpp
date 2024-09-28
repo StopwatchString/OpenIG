@@ -5,7 +5,6 @@
 #include <GLFW/glfw3native.h>
 
 #include "VkExtHelpers.h"
-#include "DebugWindow.h"
 
 #include <iostream>
 #include <vector>
@@ -138,21 +137,8 @@ std::unordered_map<VkPhysicalDevice, QueueFamilyIndices> mapPhysicalDevicesToQue
 //---------------------------------------------------------
 // main()
 //---------------------------------------------------------
-int main(int argc, char** argv) {
-
-    DebugWindow debugWindow;
-    debugWindow.init();
-    float f1 = 0.0;
-    debugWindow.addSliderFloat("test", f1, 0.0f, 10.0f);
-    debugWindow.addSliderFloat("test", f1, 0.0f, 10.0f);
-    debugWindow.addSliderFloat("test", f1, 0.0f, 10.0f);
-    debugWindow.addSliderFloat("test", f1, 0.0f, 10.0f);
-    debugWindow.addSliderFloat("test", f1, 0.0f, 10.0f);
-    char string[] = "teststr";
-    debugWindow.addInputText("some text", string, sizeof(string));
-
-    debugWindow.addButton("print some text", []() {std::cout << "some text" << '\n'; });
-
+int main(int argc, char** argv) 
+{
     //--------------
     // Init GLFW
     //--------------
@@ -315,7 +301,6 @@ int main(int argc, char** argv) {
     //--------------
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        debugWindow.draw();
     }
 
     //--------------
